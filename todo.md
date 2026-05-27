@@ -34,8 +34,8 @@
 - [x] Add admin-controlled visibility toggle
 
 ## Phase 6: Polish & Testing
-- [ ] Test all flows end-to-end
-- [ ] Optimize UI/UX for elegance
-- [ ] Test Myanmar phone validation
-- [ ] Test vote limits and duplicate prevention
-- [ ] Final polish and deployment
+- [x] Test all flows end-to-end
+- [x] Optimize UI/UX for elegance
+- [x] Test Myanmar phone validation
+- [x] Test vote limits and duplicate prevention
+- [x] Final polish and deployment

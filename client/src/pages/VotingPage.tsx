@@ -24,9 +24,10 @@ export default function VotingPage() {
 
   // Queries
   const { data: candidates, isLoading: candidatesLoading } = trpc.candidates.list.useQuery();
+  const isValidPhoneFormat = /^09\d{8}$/.test(phoneNumber);
   const { data: existingVoter } = trpc.voters.getByPhone.useQuery(
     { phoneNumber },
-    { enabled: phoneNumber.length === 10 }
+    { enabled: isValidPhoneFormat }
   );
 
   // Mutations
@@ -51,12 +52,11 @@ export default function VotingPage() {
   });
 
   // Validation
-  const isValidPhoneNumber = /^09\d{8}$/.test(phoneNumber);
-  const canRegister = isValidPhoneNumber && !existingVoter?.hasVoted;
+  const canRegister = isValidPhoneFormat && !existingVoter?.hasVoted;
   const canSubmitVotes = selectedCandidates.length > 0 && selectedCandidates.length <= 3;
 
   const handleRegister = async () => {
-    if (!isValidPhoneNumber) {
+    if (!isValidPhoneFormat) {
       toast.error("Please enter a valid Myanmar phone number (09xxxxxxxx)");
       return;
     }
@@ -157,12 +157,12 @@ export default function VotingPage() {
                   </p>
                 </div>
 
-                {isValidPhoneNumber && !existingVoter?.hasVoted && (
-                  <div className="p-3 bg-primary/10 border border-primary rounded-lg flex gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-primary">Valid phone number format</p>
-                  </div>
-                )}
+              {isValidPhoneFormat && !existingVoter?.hasVoted && (
+                <div className="p-3 bg-primary/10 border border-primary rounded-lg flex gap-2">
+                  <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-primary">Valid phone number format</p>
+                </div>
+              )}
 
                 <Button
                   onClick={handleRegister}
