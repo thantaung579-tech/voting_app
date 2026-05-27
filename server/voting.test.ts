@@ -33,23 +33,24 @@ describe("Voting App Logic", () => {
   });
 
   describe("Myanmar Phone Number Validation", () => {
-    it("should validate correct Myanmar phone format (09xxxxxxxx)", () => {
-      const validPhones = ["0912345678", "0987654321", "0911111111"];
+    it("should validate correct Myanmar phone format (09xxxxxxxxx - 11 digits)", () => {
+      const validPhones = ["09123456789", "09876543210", "09111111111"];
       validPhones.forEach(phone => {
-        expect(/^09\d{8}$/.test(phone)).toBe(true);
+        expect(/^09\d{9}$/.test(phone)).toBe(true);
       });
     });
 
     it("should reject invalid Myanmar phone formats", () => {
       const invalidPhones = [
-        "0812345678",  // Doesn't start with 09
-        "09123456",    // Too short
-        "091234567890", // Too long
-        "9123456789",  // Missing leading 0
-        "09 12345678", // Contains space
+        "0812345678",   // Doesn't start with 09
+        "091234567",    // Too short (9 digits)
+        "0912345678",   // Too short (10 digits)
+        "091234567890", // Too long (12 digits)
+        "9123456789",   // Missing leading 0
+        "09 123456789", // Contains space
       ];
       invalidPhones.forEach(phone => {
-        expect(/^09\d{8}$/.test(phone)).toBe(false);
+        expect(/^09\d{9}$/.test(phone)).toBe(false);
       });
     });
   });

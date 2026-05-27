@@ -24,7 +24,7 @@ export default function VotingPage() {
 
   // Queries
   const { data: candidates, isLoading: candidatesLoading } = trpc.candidates.list.useQuery();
-  const isValidPhoneFormat = /^09\d{8}$/.test(phoneNumber);
+  const isValidPhoneFormat = /^09\d{9}$/.test(phoneNumber);
   const { data: existingVoter } = trpc.voters.getByPhone.useQuery(
     { phoneNumber },
     { enabled: isValidPhoneFormat }
@@ -147,13 +147,13 @@ export default function VotingPage() {
                     type="tel"
                     placeholder="09xxxxxxxx"
                     value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, "").slice(0, 10))}
-                    maxLength={10}
+                    onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, "").slice(0, 11))}
+                    maxLength={11}
                     className="mt-2"
                     disabled={registerVoterMutation.isPending}
                   />
                   <p className="text-xs text-muted-foreground mt-2">
-                    Format: 09xxxxxxxx (10 digits starting with 09)
+                    Format: 09xxxxxxxxx (11 digits starting with 09)
                   </p>
                 </div>
 

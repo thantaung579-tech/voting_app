@@ -6,8 +6,8 @@ import { z } from "zod";
 import * as db from "./db";
 import { TRPCError } from "@trpc/server";
 
-// Myanmar phone number validation: 09xxxxxxxx (10 digits starting with 09)
-const myanmarPhoneSchema = z.string().regex(/^09\d{8}$/, "Invalid Myanmar phone number format. Must be 09xxxxxxxx");
+// Myanmar phone number validation: 09xxxxxxxxx (11 digits starting with 09)
+const myanmarPhoneSchema = z.string().regex(/^09\d{9}$/, "Invalid Myanmar phone number format. Must be 09xxxxxxxxx");
 
 export const appRouter = router({
   system: systemRouter,
