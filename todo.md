@@ -1,0 +1,41 @@
+# Voting App TODO
+
+## Phase 1: Design System & Database Schema
+- [x] Define elegant color palette and typography in index.css
+- [x] Create database schema (candidates, voters, votes)
+- [x] Generate and apply database migrations
+
+## Phase 2: Backend API
+- [x] Create candidates router (CRUD operations)
+- [x] Create voters router (phone verification, registration)
+- [x] Create votes router (vote submission, duplicate prevention)
+- [x] Create results router (vote tallies, rankings)
+- [x] Create admin router (results visibility toggle)
+- [x] Write vitest tests for voting logic
+
+## Phase 3: Admin Panel
+- [x] Build admin dashboard layout
+- [x] Implement candidate management (add, edit, delete)
+- [x] Implement photo upload for candidates
+- [x] Implement results visibility toggle
+- [x] Add admin authentication/authorization
+
+## Phase 4: Voter Registration & Voting
+- [x] Build voter registration page with Myanmar phone validation
+- [x] Build voting interface with candidate grid
+- [x] Implement 3-vote selection limit
+- [x] Implement vote submission
+- [x] Add duplicate vote prevention feedback
+
+## Phase 5: Results Page
+- [x] Build results page layout
+- [x] Display vote tallies and rankings
+- [x] Implement winner highlight with celebration effect
+- [x] Add admin-controlled visibility toggle
+
+## Phase 6: Polish & Testing
+- [ ] Test all flows end-to-end
+- [ ] Optimize UI/UX for elegance
+- [ ] Test Myanmar phone validation
+- [ ] Test vote limits and duplicate prevention
+- [ ] Final polish and deployment
