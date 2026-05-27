@@ -54,12 +54,11 @@ export const appRouter = router({
       .input(z.object({
         name: z.string().min(1, "Candidate name is required"),
         description: z.string().optional(),
-        photoUrl: z.string().optional(),
         photoKey: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
         try {
-          return await db.createCandidate(input.name, input.description, input.photoUrl, input.photoKey);
+          return await db.createCandidate(input.name, input.description, input.photoKey);
         } catch (error) {
           console.error("Error creating candidate:", error);
           throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create candidate" });
@@ -72,7 +71,6 @@ export const appRouter = router({
         id: z.number(),
         name: z.string().optional(),
         description: z.string().optional(),
-        photoUrl: z.string().optional(),
         photoKey: z.string().optional(),
       }))
       .mutation(async ({ input }) => {

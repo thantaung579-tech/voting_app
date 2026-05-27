@@ -137,7 +137,6 @@ export default function AdminDashboard() {
     createCandidateMutation.mutate({
       name: formData.name,
       description: formData.description,
-      photoUrl,
       photoKey,
     });
   };
@@ -148,7 +147,7 @@ export default function AdminDashboard() {
       name: candidate.name,
       description: candidate.description || "",
     });
-    setPhotoPreview(candidate.photoUrl || "");
+    setPhotoPreview(candidate.photoKey ? `/manus-storage/${candidate.photoKey}` : "");
     setIsEditOpen(true);
   };
 
@@ -158,12 +157,10 @@ export default function AdminDashboard() {
       return;
     }
 
-    let photoUrl = editingCandidate.photoUrl;
     let photoKey = editingCandidate.photoKey;
 
     if (photoFile) {
       try {
-        photoUrl = photoPreview;
         photoKey = `candidate-${Date.now()}`;
       } catch (error) {
         toast.error("Failed to upload photo");
@@ -175,7 +172,6 @@ export default function AdminDashboard() {
       id: editingCandidate.id,
       name: formData.name,
       description: formData.description,
-      photoUrl,
       photoKey,
     });
   };
@@ -304,9 +300,9 @@ export default function AdminDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {candidates.map((candidate) => (
                 <Card key={candidate.id} className="overflow-hidden elevation-2 hover:elevation-3 transition-smooth">
-                  {candidate.photoUrl && (
+                  {candidate.photoKey && (
                     <img
-                      src={candidate.photoUrl}
+                      src={`/manus-storage/${candidate.photoKey}`}
                       alt={candidate.name}
                       className="w-full h-48 object-cover"
                     />

@@ -217,9 +217,9 @@ export default function VotingPage() {
                             : "hover:elevation-3"
                         }`}
                       >
-                        {candidate.photoUrl && (
+                        {candidate.photoKey && (
                           <img
-                            src={candidate.photoUrl}
+                            src={`/manus-storage/${candidate.photoKey}`}
                             alt={candidate.name}
                             className="w-full h-48 object-cover"
                           />

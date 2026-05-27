@@ -114,9 +114,9 @@ export default function ResultsPage() {
                     <h2 className="text-headline text-primary text-center mb-2">🎉 We Have a Winner! 🎉</h2>
 
                     <div className="text-center mb-6">
-                      {winner.photoUrl && (
+                      {winner.photoKey && (
                         <img
-                          src={winner.photoUrl}
+                          src={`/manus-storage/${winner.photoKey}`}
                           alt={winner.name}
                           className="w-32 h-32 rounded-full object-cover mx-auto mb-4 ring-4 ring-primary"
                         />
@@ -175,13 +175,13 @@ export default function ResultsPage() {
                         {/* Candidate Info */}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-3 mb-2">
-                            {candidate.photoUrl && (
-                              <img
-                                src={candidate.photoUrl}
-                                alt={candidate.name}
-                                className="w-10 h-10 rounded-full object-cover"
-                              />
-                            )}
+                        {candidate.photoKey && (
+                          <img
+                            src={`/manus-storage/${candidate.photoKey}`}
+                            alt={candidate.name}
+                            className="w-20 h-20 rounded-full object-cover mr-4"
+                          />
+                        )}
                             <div className="flex-1 min-w-0">
                               <h3 className="text-title text-foreground truncate">{candidate.name}</h3>
                             </div>

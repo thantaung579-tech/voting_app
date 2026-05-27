@@ -32,7 +32,6 @@ export const candidates = mysqlTable("candidates", {
   id: int("id").autoincrement().primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
-  photoUrl: text("photoUrl"),
   photoKey: varchar("photoKey", { length: 255 }),
   voteCount: int("voteCount").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

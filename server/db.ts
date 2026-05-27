@@ -104,14 +104,13 @@ export async function getCandidateById(id: number): Promise<Candidate | undefine
   return result.length > 0 ? result[0] : undefined;
 }
 
-export async function createCandidate(name: string, description?: string, photoUrl?: string, photoKey?: string): Promise<Candidate> {
+export async function createCandidate(name: string, description?: string, photoKey?: string): Promise<Candidate> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
   await db.insert(candidates).values({
     name,
     description: description || null,
-    photoUrl: photoUrl || null,
     photoKey: photoKey || null,
   });
   
@@ -121,7 +120,7 @@ export async function createCandidate(name: string, description?: string, photoU
   return result[0];
 }
 
-export async function updateCandidate(id: number, updates: { name?: string; description?: string; photoUrl?: string; photoKey?: string }): Promise<Candidate> {
+export async function updateCandidate(id: number, updates: { name?: string; description?: string; photoKey?: string }): Promise<Candidate> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
