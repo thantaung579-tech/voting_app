@@ -39,3 +39,8 @@
 - [x] Test Myanmar phone validation
 - [x] Test vote limits and duplicate prevention
 - [x] Final polish and deployment
+
+## Additional Tasks
+- [x] Change app name to "Yadanabon Computer Science's Selections" (via Management UI Settings)
+- [x] Create sample candidate profiles with JPG photos
+- [x] Upload sample photos to S3 storage

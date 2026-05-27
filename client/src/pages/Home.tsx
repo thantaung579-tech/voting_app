@@ -18,7 +18,7 @@ export default function Home() {
             <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
               <BarChart3 className="w-6 h-6 text-primary-foreground" />
             </div>
-            <h1 className="text-xl font-bold text-foreground">Myanmar Voting</h1>
+            <h1 className="text-xl font-bold text-foreground">Yadanabon CS Selections</h1>
           </div>
           <div className="flex items-center gap-4">
             {isAuthenticated && user?.role === "admin" && (
