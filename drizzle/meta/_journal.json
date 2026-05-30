@@ -22,6 +22,13 @@
       "when": 1779872484914,
       "tag": "0002_dry_puck",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1780165938045,
+      "tag": "0003_curly_daimon_hellstrom",
+      "breakpoints": true
     }
   ]
 }

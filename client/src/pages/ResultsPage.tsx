@@ -18,13 +18,13 @@ export default function ResultsPage() {
 
   // Queries
   const { data: isVisible, isLoading: visibilityLoading } = trpc.results.isVisible.useQuery();
-  const { data: results, isLoading: resultsLoading } = trpc.results.getResults.useQuery(
+  const { data: results, isLoading: resultsLoading, error: resultsError } = trpc.results.getResults.useQuery(
     undefined,
-    { enabled: isVisible }
+    { enabled: isVisible ?? false }
   );
-  const { data: winner } = trpc.results.getWinner.useQuery(
+  const { data: winner, error: winnerError } = trpc.results.getWinner.useQuery(
     undefined,
-    { enabled: isVisible }
+    { enabled: isVisible ?? false }
   );
 
   // Generate confetti on winner display
@@ -47,7 +47,7 @@ export default function ResultsPage() {
     );
   }
 
-  if (!isVisible) {
+  if (!isVisible || resultsError || winnerError) {
     return (
       <div className="min-h-screen bg-background">
         <div className="container py-12">
