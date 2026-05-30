@@ -149,19 +149,74 @@ export async function registerVoter(phoneNumber: string): Promise<Voter> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  // Check if voter already exists
   const existing = await getVoterByPhoneNumber(phoneNumber);
   if (existing) return existing;
   
   await db.insert(voters).values({
     phoneNumber,
+    isVerified: false,
     hasVoted: false,
   });
   
-  // Get the newly created voter
   const result = await db.select().from(voters).where(eq(voters.phoneNumber, phoneNumber)).limit(1);
   if (result.length === 0) throw new Error("Failed to register voter");
   return result[0];
+}
+
+export async function saveOtpCode(phoneNumber: string, otpCode: string, expiryMinutes: number = 10): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const expiresAt = new Date(Date.now() + expiryMinutes * 60 * 1000);
+  const existing = await getVoterByPhoneNumber(phoneNumber);
+  
+  if (existing) {
+    await db.update(voters)
+      .set({
+        otpCode,
+        otpExpiresAt: expiresAt,
+        otpAttempts: 0,
+      })
+      .where(eq(voters.phoneNumber, phoneNumber));
+  } else {
+    await db.insert(voters).values({
+      phoneNumber,
+      otpCode,
+      otpExpiresAt: expiresAt,
+      isVerified: false,
+      hasVoted: false,
+    });
+  }
+}
+
+export async function verifyOtpCode(phoneNumber: string, otpCode: string): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  
+  const voter = await getVoterByPhoneNumber(phoneNumber);
+  if (!voter) return false;
+  
+  if (!voter.otpExpiresAt || new Date() > voter.otpExpiresAt) {
+    return false;
+  }
+  
+  if (voter.otpCode !== otpCode) {
+    await db.update(voters)
+      .set({ otpAttempts: (voter.otpAttempts || 0) + 1 })
+      .where(eq(voters.phoneNumber, phoneNumber));
+    return false;
+  }
+  
+  await db.update(voters)
+    .set({
+      isVerified: true,
+      otpCode: null,
+      otpExpiresAt: null,
+      otpAttempts: 0,
+    })
+    .where(eq(voters.phoneNumber, phoneNumber));
+  
+  return true;
 }
 
 // ========== Vote Functions ==========

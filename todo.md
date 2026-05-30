@@ -44,3 +44,12 @@
 - [x] Change app name to "Yadanabon Computer Science's Selections" (via Management UI Settings)
 - [x] Create sample candidate profiles with JPG photos
 - [x] Upload sample photos to S3 storage
+
+## OTP Phone Verification Feature
+- [x] Set up OTP API integration
+- [x] Create OTP request endpoint (send code to phone)
+- [x] Create OTP verification endpoint (validate code)
+- [x] Update voter registration flow with OTP verification
+- [x] Add OTP input UI component
+- [x] Add OTP timer and resend functionality
+- [x] Test OTP flow end-to-end
