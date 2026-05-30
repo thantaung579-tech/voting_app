@@ -18,7 +18,7 @@ export default function Home() {
             <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
               <BarChart3 className="w-6 h-6 text-primary-foreground" />
             </div>
-            <h1 className="text-xl font-bold text-foreground">Myanmar Voting</h1>
+            <h1 className="text-xl font-bold text-foreground">Yadanabon CS's Selections</h1>
           </div>
           <div className="flex items-center gap-4">
             {isAuthenticated && user?.role === "admin" && (
@@ -149,7 +149,7 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="border-t border-border py-8 text-center text-muted-foreground">
-        <p className="text-sm">© 2026 Myanmar Voting Platform. All rights reserved.</p>
+        <p className="text-sm">© 2026 Yadanabon CS's Selections. All rights reserved.</p>
       </footer>
     </div>
   );

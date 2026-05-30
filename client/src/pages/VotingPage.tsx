@@ -115,7 +115,7 @@ export default function VotingPage() {
       <div className="container py-12">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-display text-primary mb-3">Myanmar Voting Platform</h1>
+          <h1 className="text-display text-primary mb-3">Yadanabon CS's Selections</h1>
           <p className="text-body text-muted-foreground max-w-2xl mx-auto">
             Cast your vote for your preferred candidates. You can select up to 3 candidates.
           </p>
