@@ -7,6 +7,7 @@ import * as db from "./db";
 import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
 import { voters } from "../drizzle/schema";
+import { sendOtpSms } from "./sms";
 
 // Myanmar phone number validation: 09xxxxxxxxx (11 digits starting with 09)
 const myanmarPhoneSchema = z.string().regex(/^09\d{9}$/, "Invalid Myanmar phone number format. Must be 09xxxxxxxxx");
@@ -118,8 +119,13 @@ export const appRouter = router({
           const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
           await db.saveOtpCode(input.phoneNumber, otpCode, 10);
 
-          // Log OTP for development (in production, send via SMS API)
-          console.log(`[OTP] Phone: ${input.phoneNumber}, Code: ${otpCode}`);
+          // Send OTP via SMS
+          const smsResult = await sendOtpSms(input.phoneNumber, otpCode);
+          
+          if (!smsResult.success) {
+            console.warn(`[OTP] SMS delivery failed for ${input.phoneNumber}: ${smsResult.error}`);
+            // Still allow the flow to continue - OTP is saved in DB
+          }
 
           return { success: true, message: "OTP sent to your phone" };
         } catch (error) {

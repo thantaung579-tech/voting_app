@@ -53,3 +53,11 @@
 - [x] Add OTP input UI component
 - [x] Add OTP timer and resend functionality
 - [x] Test OTP flow end-to-end
+
+## SMS API Integration
+- [x] Create SMS service module with sendOtpSms function
+- [x] Store SMS API key securely in environment variables
+- [x] Update requestOtp endpoint to send real SMS codes
+- [x] Add SMS service tests with 8 test cases
+- [x] Handle SMS delivery failures gracefully
+- [x] All tests passing (22/22)
