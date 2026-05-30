@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { CheckCircle2, AlertCircle } from "lucide-react";
 
-type VotingStep = "phone" | "otp" | "voting" | "submitted";
+type VotingStep = "register" | "voting" | "submitted";
 
 interface SelectedCandidate {
   id: number;
@@ -16,13 +16,11 @@ interface SelectedCandidate {
 }
 
 export default function VotingPage() {
-  const [step, setStep] = useState<VotingStep>("phone");
+  const [step, setStep] = useState<VotingStep>("register");
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [otpCode, setOtpCode] = useState("");
   const [voterId, setVoterId] = useState<number | null>(null);
   const [selectedCandidates, setSelectedCandidates] = useState<SelectedCandidate[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [otpTimer, setOtpTimer] = useState(0);
 
   // Queries
   const { data: candidates, isLoading: candidatesLoading } = trpc.candidates.list.useQuery();
@@ -33,25 +31,14 @@ export default function VotingPage() {
   );
 
   // Mutations
-  const requestOtpMutation = trpc.voters.requestOtp.useMutation({
-    onSuccess: () => {
-      setStep("otp");
-      setOtpTimer(60);
-      toast.success("OTP sent to your phone!");
-    },
-    onError: (error: any) => {
-      toast.error(error.message || "Failed to send OTP");
-    },
-  });
-
-  const verifyOtpMutation = trpc.voters.verifyOtp.useMutation({
-    onSuccess: (data: any) => {
-      setVoterId(data.voter.id);
+  const registerVoterMutation = trpc.voters.register.useMutation({
+    onSuccess: (voter) => {
+      setVoterId(voter.id);
       setStep("voting");
-      toast.success("Phone verified! Now select your candidates.");
+      toast.success("Registration successful! Now select your candidates.");
     },
-    onError: (error: any) => {
-      toast.error(error.message || "Invalid OTP");
+    onError: (error) => {
+      toast.error(error.message || "Failed to register");
     },
   });
 
@@ -64,32 +51,22 @@ export default function VotingPage() {
     },
   });
 
-  // OTP Timer
-  useEffect(() => {
-    if (otpTimer > 0) {
-      const timer = setTimeout(() => setOtpTimer(otpTimer - 1), 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [otpTimer]);
-
   // Validation
-  const canRequestOtp = isValidPhoneFormat;
+  const canRegister = isValidPhoneFormat && !existingVoter?.hasVoted;
   const canSubmitVotes = selectedCandidates.length > 0 && selectedCandidates.length <= 3;
 
-  const handleRequestOtp = async () => {
+  const handleRegister = async () => {
     if (!isValidPhoneFormat) {
-      toast.error("Please enter a valid Myanmar phone number (09xxxxxxxxx)");
+      toast.error("Please enter a valid Myanmar phone number (09xxxxxxxx)");
       return;
     }
-    requestOtpMutation.mutate({ phoneNumber });
-  };
 
-  const handleVerifyOtp = async () => {
-    if (otpCode.length !== 6) {
-      toast.error("OTP must be 6 digits");
+    if (existingVoter?.hasVoted) {
+      toast.error("This phone number has already voted");
       return;
     }
-    verifyOtpMutation.mutate({ phoneNumber, otpCode });
+
+    registerVoterMutation.mutate({ phoneNumber });
   };
 
   const toggleCandidate = (candidate: any) => {
@@ -138,14 +115,14 @@ export default function VotingPage() {
       <div className="container py-12">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-display text-primary mb-3">Yadanabon CS Selections</h1>
+          <h1 className="text-display text-primary mb-3">Myanmar Voting Platform</h1>
           <p className="text-body text-muted-foreground max-w-2xl mx-auto">
             Cast your vote for your preferred candidates. You can select up to 3 candidates.
           </p>
         </div>
 
-        {/* Phone Number Step */}
-        {step === "phone" && (
+        {/* Registration Step */}
+        {step === "register" && (
           <div className="max-w-md mx-auto">
             <Card className="p-8 elevation-3">
               <h2 className="text-headline text-foreground mb-6">Voter Registration</h2>
@@ -173,7 +150,7 @@ export default function VotingPage() {
                     onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, "").slice(0, 11))}
                     maxLength={11}
                     className="mt-2"
-                    disabled={requestOtpMutation.isPending}
+                    disabled={registerVoterMutation.isPending}
                   />
                   <p className="text-xs text-muted-foreground mt-2">
                     Format: 09xxxxxxxxx (11 digits starting with 09)
@@ -188,90 +165,19 @@ export default function VotingPage() {
               )}
 
                 <Button
-                  onClick={handleRequestOtp}
-                  disabled={!canRequestOtp || requestOtpMutation.isPending}
+                  onClick={handleRegister}
+                  disabled={!canRegister || registerVoterMutation.isPending}
                   className="w-full"
                   size="lg"
                 >
-                  {requestOtpMutation.isPending ? (
+                  {registerVoterMutation.isPending ? (
                     <>
-                      <Spinner className="w-4 h-4 mr-2" /> Sending OTP...
+                      <Spinner className="w-4 h-4 mr-2" /> Registering...
                     </>
                   ) : (
                     "Continue to Voting"
                   )}
                 </Button>
-              </div>
-            </Card>
-          </div>
-        )}
-
-        {/* OTP Verification Step */}
-        {step === "otp" && (
-          <div className="max-w-md mx-auto">
-            <Card className="p-8 elevation-3">
-              <h2 className="text-headline text-foreground mb-2">Verify Your Phone</h2>
-              <p className="text-sm text-muted-foreground mb-6">
-                We've sent a 6-digit code to {phoneNumber}
-              </p>
-
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="otp" className="text-foreground">
-                    Enter OTP Code
-                  </Label>
-                  <Input
-                    id="otp"
-                    type="text"
-                    placeholder="000000"
-                    value={otpCode}
-                    onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                    maxLength={6}
-                    className="mt-2 text-center text-2xl tracking-widest"
-                    disabled={verifyOtpMutation.isPending}
-                  />
-                  <p className="text-xs text-muted-foreground mt-2">
-                    {otpTimer > 0 ? `Code expires in ${otpTimer}s` : "Code expired. Request a new one."}
-                  </p>
-                </div>
-
-                <Button
-                  onClick={handleVerifyOtp}
-                  disabled={otpCode.length !== 6 || verifyOtpMutation.isPending}
-                  className="w-full"
-                  size="lg"
-                >
-                  {verifyOtpMutation.isPending ? (
-                    <>
-                      <Spinner className="w-4 h-4 mr-2" /> Verifying...
-                    </>
-                  ) : (
-                    "Verify & Continue"
-                  )}
-                </Button>
-
-                <Button
-                  onClick={() => {
-                    setStep("phone");
-                    setOtpCode("");
-                  }}
-                  variant="outline"
-                  className="w-full"
-                  disabled={requestOtpMutation.isPending}
-                >
-                  Change Phone Number
-                </Button>
-
-                {otpTimer === 0 && (
-                  <Button
-                    onClick={() => requestOtpMutation.mutate({ phoneNumber })}
-                    variant="ghost"
-                    className="w-full"
-                    disabled={requestOtpMutation.isPending}
-                  >
-                    Resend OTP
-                  </Button>
-                )}
               </div>
             </Card>
           </div>
@@ -342,10 +248,9 @@ export default function VotingPage() {
                 <div className="flex gap-4 justify-center">
                   <Button
                     onClick={() => {
-                      setStep("phone");
+                      setStep("register");
                       setSelectedCandidates([]);
                       setPhoneNumber("");
-                      setOtpCode("");
                       setVoterId(null);
                     }}
                     variant="outline"
@@ -390,9 +295,8 @@ export default function VotingPage() {
               </p>
               <Button
                 onClick={() => {
-                  setStep("phone");
+                  setStep("register");
                   setPhoneNumber("");
-                  setOtpCode("");
                   setVoterId(null);
                   setSelectedCandidates([]);
                 }}

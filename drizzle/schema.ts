@@ -47,10 +47,6 @@ export type InsertCandidate = typeof candidates.$inferInsert;
 export const voters = mysqlTable("voters", {
   id: int("id").autoincrement().primaryKey(),
   phoneNumber: varchar("phoneNumber", { length: 20 }).notNull().unique(),
-  isVerified: boolean("isVerified").default(false).notNull(),
-  otpCode: varchar("otpCode", { length: 6 }),
-  otpExpiresAt: timestamp("otpExpiresAt"),
-  otpAttempts: int("otpAttempts").default(0).notNull(),
   hasVoted: boolean("hasVoted").default(false).notNull(),
   votedAt: timestamp("votedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

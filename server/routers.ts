@@ -5,9 +5,6 @@ import { publicProcedure, router, adminProcedure } from "./_core/trpc";
 import { z } from "zod";
 import * as db from "./db";
 import { TRPCError } from "@trpc/server";
-import { eq } from "drizzle-orm";
-import { voters } from "../drizzle/schema";
-import { sendOtpSms } from "./sms";
 
 // Myanmar phone number validation: 09xxxxxxxxx (11 digits starting with 09)
 const myanmarPhoneSchema = z.string().regex(/^09\d{9}$/, "Invalid Myanmar phone number format. Must be 09xxxxxxxxx");
@@ -55,8 +52,8 @@ export const appRouter = router({
     // Create candidate (admin only)
     create: adminProcedure
       .input(z.object({
-        name: z.string().min(1),
-        description: z.string().min(1),
+        name: z.string().min(1, "Candidate name is required"),
+        description: z.string().optional(),
         photoKey: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
@@ -72,17 +69,14 @@ export const appRouter = router({
     update: adminProcedure
       .input(z.object({
         id: z.number(),
-        name: z.string().min(1).optional(),
-        description: z.string().min(1).optional(),
+        name: z.string().optional(),
+        description: z.string().optional(),
         photoKey: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
         try {
-          const updates: { name?: string; description?: string; photoKey?: string } = {};
-          if (input.name) updates.name = input.name;
-          if (input.description) updates.description = input.description;
-          if (input.photoKey) updates.photoKey = input.photoKey;
-          return await db.updateCandidate(input.id, updates);
+          const { id, ...updates } = input;
+          return await db.updateCandidate(id, updates);
         } catch (error) {
           console.error("Error updating candidate:", error);
           throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to update candidate" });
@@ -105,64 +99,16 @@ export const appRouter = router({
 
   // ========== Voters Router ==========
   voters: router({
-    // Request OTP for phone number
-    requestOtp: publicProcedure
+    // Register or get voter by phone number
+    register: publicProcedure
       .input(z.object({ phoneNumber: myanmarPhoneSchema }))
       .mutation(async ({ input }) => {
         try {
-          const voter = await db.getVoterByPhoneNumber(input.phoneNumber);
-          if (voter?.hasVoted) {
-            throw new TRPCError({ code: "BAD_REQUEST", message: "This phone number has already voted" });
-          }
-
-          await db.registerVoter(input.phoneNumber);
-          const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-          await db.saveOtpCode(input.phoneNumber, otpCode, 10);
-
-          // Send OTP via SMS
-          const smsResult = await sendOtpSms(input.phoneNumber, otpCode);
-          
-          if (!smsResult.success) {
-            console.warn(`[OTP] SMS delivery failed for ${input.phoneNumber}: ${smsResult.error}`);
-            // Still allow the flow to continue - OTP is saved in DB
-          }
-
-          return { success: true, message: "OTP sent to your phone" };
+          const voter = await db.registerVoter(input.phoneNumber);
+          return voter;
         } catch (error) {
-          if (error instanceof TRPCError) throw error;
-          console.error("Error requesting OTP:", error);
-          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to send OTP" });
-        }
-      }),
-
-    // Verify OTP code
-    verifyOtp: publicProcedure
-      .input(z.object({
-        phoneNumber: myanmarPhoneSchema,
-        otpCode: z.string().regex(/^\d{6}$/, "OTP must be 6 digits"),
-      }))
-      .mutation(async ({ input }) => {
-        try {
-          const voter = await db.getVoterByPhoneNumber(input.phoneNumber);
-          if (!voter) {
-            throw new TRPCError({ code: "NOT_FOUND", message: "Phone number not registered" });
-          }
-
-          // Check attempt limit (max 5 attempts)
-          if ((voter.otpAttempts || 0) >= 5) {
-            throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Too many failed attempts. Request a new OTP." });
-          }
-
-          const isValid = await db.verifyOtpCode(input.phoneNumber, input.otpCode);
-          if (!isValid) {
-            throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid or expired OTP" });
-          }
-
-          return { success: true, voter };
-        } catch (error) {
-          if (error instanceof TRPCError) throw error;
-          console.error("Error verifying OTP:", error);
-          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to verify OTP" });
+          console.error("Error registering voter:", error);
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to register voter" });
         }
       }),
 
@@ -177,7 +123,7 @@ export const appRouter = router({
           console.error("Error fetching voter:", error);
           throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to fetch voter" });
         }
-      })
+      }),
   }),
 
   // ========== Votes Router ==========
@@ -202,40 +148,35 @@ export const appRouter = router({
       }))
       .mutation(async ({ input }) => {
         try {
-          return await db.submitVote(input.voterId, input.candidateId);
+          const vote = await db.submitVote(input.voterId, input.candidateId);
+          return vote;
         } catch (error) {
+          if (error instanceof Error) {
+            if (error.message.includes("already voted")) {
+              throw new TRPCError({ code: "CONFLICT", message: error.message });
+            }
+            if (error.message.includes("maximum vote limit")) {
+              throw new TRPCError({ code: "BAD_REQUEST", message: error.message });
+            }
+          }
           console.error("Error submitting vote:", error);
           throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to submit vote" });
-        }
-      }),
-
-    // Mark votes as submitted
-    markSubmitted: publicProcedure
-      .input(z.object({ voterId: z.number() }))
-      .mutation(async ({ input }) => {
-        try {
-          const db_instance = await db.getDb();
-          if (!db_instance) throw new Error("Database not available");
-          
-          await db_instance.update(voters)
-            .set({ hasVoted: true, votedAt: new Date() })
-            .where(eq(voters.id, input.voterId));
-          
-          return { success: true };
-        } catch (error) {
-          console.error("Error marking votes as submitted:", error);
-          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to mark votes as submitted" });
         }
       }),
   }),
 
   // ========== Results Router ==========
   results: router({
-    // Get all results
+    // Get all results ranked by vote count
     getResults: publicProcedure.query(async () => {
       try {
+        const isVisible = await db.isResultsVisible();
+        if (!isVisible) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Results are not yet visible" });
+        }
         return await db.getResults();
       } catch (error) {
+        if (error instanceof TRPCError) throw error;
         console.error("Error fetching results:", error);
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to fetch results" });
       }
@@ -244,6 +185,10 @@ export const appRouter = router({
     // Get winner
     getWinner: publicProcedure.query(async () => {
       try {
+        const isVisible = await db.isResultsVisible();
+        if (!isVisible) {
+          return null;
+        }
         return await db.getWinner();
       } catch (error) {
         console.error("Error fetching winner:", error);
@@ -251,7 +196,7 @@ export const appRouter = router({
       }
     }),
 
-    // Check if results are visible
+    // Check if results are visible (public)
     isVisible: publicProcedure.query(async () => {
       try {
         return await db.isResultsVisible();
@@ -264,14 +209,27 @@ export const appRouter = router({
     // Toggle results visibility (admin only)
     toggleVisibility: adminProcedure.mutation(async () => {
       try {
-        const currentVisibility = await db.isResultsVisible();
-        await db.setResultsVisible(!currentVisibility);
-        return { success: true, isVisible: !currentVisibility };
+        const isCurrentlyVisible = await db.isResultsVisible();
+        await db.setResultsVisible(!isCurrentlyVisible);
+        return { visible: !isCurrentlyVisible };
       } catch (error) {
         console.error("Error toggling results visibility:", error);
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to toggle results visibility" });
       }
     }),
+
+    // Set results visibility (admin only)
+    setVisibility: adminProcedure
+      .input(z.object({ visible: z.boolean() }))
+      .mutation(async ({ input }) => {
+        try {
+          await db.setResultsVisible(input.visible);
+          return { visible: input.visible };
+        } catch (error) {
+          console.error("Error setting results visibility:", error);
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to set results visibility" });
+        }
+      }),
   }),
 });
 
