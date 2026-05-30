@@ -236,9 +236,6 @@ export default function VotingPage() {
                               {candidate.description}
                             </p>
                           )}
-                          <div className="text-sm font-semibold text-primary">
-                            {candidate.voteCount} votes
-                          </div>
                         </div>
                       </Card>
                     );
